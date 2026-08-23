@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="올바른 분리수거 방법을 알려주는 가이드 앱. 쓰레기 검색으로 어디에 버려야 할지 바로 확인하세요.">
+<title>분리수거 가이드</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 16px; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f7f0; color: #2C2C2A; min-height: 100vh; }
+
+  .header { background: #1D9E75; padding: 20px 20px 18px; color: #fff; position: sticky; top: 0; z-index: 100; }
+  .header-inner { max-width: 700px; margin: 0 auto; }
+  .header h1 { font-size: 20px; font-weight: 600; display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .header p { font-size: 13px; opacity: 0.85; }
+
+  .search-wrap { background: #fff; border-bottom: 1px solid #d0e8d8; padding: 12px 20px; position: sticky; top: 64px; z-index: 99; }
+  .search-inner { max-width: 700px; margin: 0 auto; }
+  .search-box { display: flex; align-items: center; gap: 8px; background: #f0f7f0; border: 1.5px solid #9FE1CB; border-radius: 24px; padding: 10px 16px; }
+  .search-box input { border: none; background: transparent; outline: none; font-size: 15px; flex: 1; color: #2C2C2A; min-width: 0; }
+  .search-box input::placeholder { color: #888780; }
+  .search-box .ti { font-size: 18px; color: #1D9E75; flex-shrink: 0; }
+  #search-clear { cursor: pointer; color: #888780; display: none; }
+
+  .search-result { max-width: 700px; margin: 12px auto 0; border-radius: 14px; border: 1.5px solid #9FE1CB; background: #fff; display: none; overflow: hidden; }
+  .sr-header { padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+  .sr-icon-wrap { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
+  .sr-title { font-size: 16px; font-weight: 600; color: #27500A; }
+  .sr-sub { font-size: 12px; color: #639922; margin-top: 2px; }
+  .sr-body { padding: 12px 16px 14px; border-top: 1px solid #d0e8d8; }
+  .sr-body p { font-size: 14px; color: #444441; line-height: 1.7; }
+  .sr-tag { display: inline-block; margin-top: 8px; font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 500; }
+
+  .main { max-width: 700px; margin: 0 auto; padding: 16px 16px 40px; }
+  .section-title { font-size: 13px; font-weight: 600; color: #639922; margin-bottom: 10px; letter-spacing: 0.04em; text-transform: uppercase; }
+
+  .cats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .cat-card { background: #fff; border-radius: 14px; border: 1.5px solid #d0e8d8; padding: 16px 12px; cursor: pointer; text-align: center; transition: border-color 0.15s, transform 0.1s; user-select: none; }
+  .cat-card:hover { border-color: #1D9E75; transform: translateY(-2px); }
+  .cat-card:active { transform: scale(0.97); }
+  .cat-card.active { border-color: #1D9E75; border-width: 2px; background: #f6fcf9; }
+  .cat-icon { font-size: 32px; margin-bottom: 8px; line-height: 1; }
+  .cat-name { font-size: 14px; font-weight: 600; color: #27500A; margin-bottom: 3px; }
+  .cat-sub { font-size: 11px; color: #639922; }
+
+  .detail-panel { background: #fff; border-radius: 14px; border: 1.5px solid #9FE1CB; overflow: hidden; display: none; margin-bottom: 24px; }
+  .dp-header { padding: 14px 16px; display: flex; align-items: center; gap: 10px; }
+  .dp-header-title { font-size: 18px; font-weight: 600; color: #fff; }
+  .dp-close { margin-left: auto; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #fff; font-size: 16px; flex-shrink: 0; }
+  .dp-close:hover { background: rgba(255,255,255,0.35); }
+  .dp-tip { margin: 12px 16px; background: #EAF3DE; border-radius: 8px; padding: 10px 12px; font-size: 13px; color: #27500A; display: flex; gap: 8px; align-items: flex-start; line-height: 1.6; }
+  .dp-tip .ti { font-size: 16px; flex-shrink: 0; margin-top: 1px; color: #639922; }
+  .items-section-label { font-size: 12px; font-weight: 600; color: #639922; padding: 4px 16px 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; padding: 0 16px 16px; }
+  .item-card { border-radius: 10px; border: 1px solid #d0e8d8; overflow: hidden; text-align: center; }
+  .item-img { width: 100%; height: 76px; object-fit: cover; display: block; background: #f0f7f0; }
+  .item-img-ph { width: 100%; height: 76px; display: flex; align-items: center; justify-content: center; font-size: 30px; background: #f0f7f0; }
+  .item-label { font-size: 12px; padding: 6px 4px; color: #444441; font-weight: 500; line-height: 1.3; }
+
+  .bottom-row { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 8px; }
+  .tips-card { flex: 1; min-width: 200px; background: #fff; border-radius: 14px; border: 1.5px solid #d0e8d8; padding: 16px; }
+  .tips-card h3 { font-size: 14px; font-weight: 600; color: #27500A; margin-bottom: 10px; }
+  .tip-row { display: flex; gap: 8px; margin-bottom: 6px; font-size: 13px; color: #444441; line-height: 1.5; }
+  .tip-row .ti { font-size: 15px; color: #1D9E75; flex-shrink: 0; margin-top: 1px; }
+  .qr-card { background: #fff; border-radius: 14px; border: 1.5px solid #d0e8d8; padding: 16px; text-align: center; min-width: 160px; }
+  .qr-card h3 { font-size: 14px; font-weight: 600; color: #27500A; margin-bottom: 10px; }
+  #qr-wrap canvas, #qr-wrap img { border-radius: 6px; }
+  .qr-note { font-size: 11px; color: #888780; margin-top: 8px; }
+
+  @media (max-width: 480px) {
+    .header { padding: 14px 16px 12px; }
+    .search-wrap { top: 56px; padding: 10px 16px; }
+    .cats-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .cat-card { padding: 12px 8px; }
+    .cat-icon { font-size: 26px; margin-bottom: 6px; }
+    .cat-name { font-size: 13px; }
+    .cat-sub { font-size: 10px; }
+    .items-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <h1><i class="ti ti-recycle"></i> 분리수거 가이드</h1>
+    <p>올바른 분리배출로 환경을 지켜요</p>
+  </div>
+</div>
+
+<div class="search-wrap">
+  <div class="search-inner">
+    <div class="search-box">
+      <i class="ti ti-search"></i>
+      <input id="search-input" type="text" placeholder="쓰레기를 검색해보세요 (예: 빠삐코, 우유팩, 종이컵...)" autocomplete="off" autocorrect="off">
+      <i class="ti ti-x" id="search-clear"></i>
+    </div>
+  </div>
+  <div class="search-inner">
+    <div class="search-result" id="search-result">
+      <div class="sr-header" id="sr-header"></div>
+      <div class="sr-body" id="sr-body"></div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+  <p class="section-title">카테고리 선택</p>
+  <div class="cats-grid" id="cats-grid"></div>
+
+  <div class="detail-panel" id="detail-panel">
+    <div class="dp-header" id="dp-header">
+      <button class="dp-close" id="dp-close" aria-label="닫기"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="dp-tip" id="dp-tip"></div>
+    <div class="items-section-label">버릴 수 있는 항목들</div>
+    <div class="items-grid" id="items-grid"></div>
+  </div>
+
+  <div class="bottom-row">
+    <div class="tips-card">
+      <h3><i class="ti ti-sparkles" style="color:#1D9E75"></i> 분리수거 핵심 원칙</h3>
+      <div class="tip-row"><i class="ti ti-circle-check"></i>내용물을 깨끗이 비운 후 버리세요</div>
+      <div class="tip-row"><i class="ti ti-circle-check"></i>라벨·뚜껑은 분리해서 각각 버려요</div>
+      <div class="tip-row"><i class="ti ti-circle-check"></i>음식물이 묻었다면 일반쓰레기로</div>
+      <div class="tip-row"><i class="ti ti-circle-check"></i>물기를 제거하고 배출하세요</div>
+      <div class="tip-row"><i class="ti ti-circle-check"></i>부피가 크면 납작하게 눌러서 버려요</div>
+    </div>
+    <div class="qr-card">
+      <h3>이 페이지 QR</h3>
+      <div id="qr-wrap"></div>
+      <p class="qr-note">스캔하면 바로 접속돼요</p>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = [
+  {
+    id:'paper', name:'종이', sub:'신문·박스·종이류', icon:'📦',
+    color:'#FAEEDA', textColor:'#412402', borderColor:'#EF9F27',
+    tip:'물에 젖거나 음식물이 묻은 종이는 일반쓰레기예요. 테이프·스티커는 반드시 제거해야 해요.',
+    items:[
+      {label:'신문지',emoji:'📰',img:'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&q=80'},
+      {label:'택배박스',emoji:'📦',img:'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=300&q=80'},
+      {label:'우유팩',emoji:'🥛',img:'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=300&q=80'},
+      {label:'잡지·책',emoji:'📖',img:'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=300&q=80'},
+      {label:'종이쇼핑백',emoji:'🛍',img:'https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=300&q=80'},
+      {label:'A4용지',emoji:'📄',img:'https://images.unsplash.com/photo-1568667256549-094345857637?w=300&q=80'},
+    ]
+  },
+  {
+    id:'vinyl', name:'비닐', sub:'봉투·랩·포장재', icon:'🛍',
+    color:'#FBEAF0', textColor:'#4B1528', borderColor:'#ED93B1',
+    tip:'내용물을 비우고 이물질이 없으면 비닐류로 버려요. 오염된 비닐은 일반쓰레기예요.',
+    items:[
+      {label:'과자봉지',emoji:'🍬',img:'https://images.unsplash.com/photo-1621939514649-280e2ee25f60?w=300&q=80'},
+      {label:'비닐봉투',emoji:'🛍',img:'https://images.unsplash.com/photo-1530587191325-3db32d826c18?w=300&q=80'},
+      {label:'라면봉지',emoji:'🍜',img:'https://images.unsplash.com/photo-1569050467447-ce54b3bbc37d?w=300&q=80'},
+      {label:'빵포장지',emoji:'🍞',img:'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?w=300&q=80'},
+      {label:'아이스크림 포장',emoji:'🍦',img:'https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=300&q=80'},
+      {label:'랩·지퍼백',emoji:'🧊',img:'https://images.unsplash.com/photo-1584362917165-526a968579e8?w=300&q=80'},
+    ]
+  },
+  {
+    id:'pet', name:'페트병', sub:'음료·생수·투명병', icon:'🍶',
+    color:'#E6F1FB', textColor:'#0C447C', borderColor:'#85B7EB',
+    tip:'라벨을 완전히 제거하고 찌그러뜨려 버려요. 뚜껑은 따로 플라스틱으로 배출해요. 투명한 PET 표시 병만 여기에.',
+    items:[
+      {label:'생수병',emoji:'💧',img:'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=300&q=80'},
+      {label:'콜라·사이다병',emoji:'🥤',img:'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=300&q=80'},
+      {label:'주스 페트병',emoji:'🧃',img:'https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=300&q=80'},
+      {label:'차·커피 페트병',emoji:'☕',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80'},
+      {label:'스포츠음료병',emoji:'🏃',img:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&q=80'},
+      {label:'막걸리 페트병',emoji:'🍶',img:'https://images.unsplash.com/photo-1523987355523-c7b5b0dd90a7?w=300&q=80'},
+    ]
+  },
+  {
+    id:'plastic', name:'플라스틱', sub:'용기·포장재류', icon:'🧴',
+    color:'#B5D4F4', textColor:'#042C53', borderColor:'#378ADD',
+    tip:'페트병을 제외한 플라스틱이에요. PP·PE·PS 등 재질 표시가 있는 용기류가 여기에 해당해요. 내용물을 비우고 라벨을 제거해요.',
+    items:[
+      {label:'샴푸·린스통',emoji:'🧴',img:'https://images.unsplash.com/photo-1631390163823-0b1c0c9a8a3d?w=300&q=80'},
+      {label:'세제통',emoji:'🧹',img:'https://images.unsplash.com/photo-1563453392212-326f5e854473?w=300&q=80'},
+      {label:'배달용기',emoji:'🍱',img:'https://images.unsplash.com/photo-1498837167922-ddd27525d352?w=300&q=80'},
+      {label:'요구르트병',emoji:'🥛',img:'https://images.unsplash.com/photo-1563636619-e9143da7973b?w=300&q=80'},
+      {label:'화장품용기',emoji:'💄',img:'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=300&q=80'},
+      {label:'스티로폼 용기',emoji:'📦',img:'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=300&q=80'},
+    ]
+  },
+  {
+    id:'can', name:'캔', sub:'음료캔·통조림·고철', icon:'🥤',
+    color:'#F1EFE8', textColor:'#2C2C2A', borderColor:'#B4B2A9',
+    tip:'내용물을 비우고 찌그러뜨려 배출하세요. 에어로졸 캔은 구멍 뚫지 말고 그대로 버려요.',
+    items:[
+      {label:'음료캔',emoji:'🥤',img:'https://images.unsplash.com/photo-1504034783-6fa0c1dd48e3?w=300&q=80'},
+      {label:'맥주캔',emoji:'🍺',img:'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=300&q=80'},
+      {label:'통조림캔',emoji:'🥫',img:'https://images.unsplash.com/photo-1558618047-3c8c76ca7d13?w=300&q=80'},
+      {label:'에어로졸캔',emoji:'🌬️',img:'https://images.unsplash.com/photo-1584473457493-17a88f5b33a2?w=300&q=80'},
+      {label:'철제뚜껑',emoji:'🪣',img:'https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=300&q=80'},
+      {label:'알루미늄 호일',emoji:'✨',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80'},
+    ]
+  },
+  {
+    id:'general', name:'일반쓰레기', sub:'종량제 봉투', icon:'🗑️',
+    color:'#FCEBEB', textColor:'#501313', borderColor:'#F09595',
+    tip:'종량제 봉투에 담아 배출하세요. 재활용이 안 되는 모든 쓰레기가 여기에 해당해요.',
+    items:[
+      {label:'종이컵',emoji:'☕',img:'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=300&q=80'},
+      {label:'화장지·티슈',emoji:'🧻',img:'https://images.unsplash.com/photo-1584515933487-779824d29309?w=300&q=80'},
+      {label:'나무젓가락',emoji:'🥢',img:'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=300&q=80'},
+      {label:'고무장갑',emoji:'🧤',img:'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=300&q=80'},
+      {label:'깨진 도자기·유리',emoji:'🍽️',img:'https://images.unsplash.com/photo-1594495894542-a46cc73e081a?w=300&q=80'},
+      {label:'빨대·이쑤시개',emoji:'🍡',img:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=300&q=80'},
+    ]
+  },
+];
+
+const SEARCH_DB = [
+  {q:['빠삐코','파삐코','아이스크림','아이스바','막대아이스크림','하겐다즈','메로나','부라보콘','월드콘','스크류바','빙빙바'],cat:'vinyl',note:'아이스크림 비닐 포장지는 비닐류로 버려요. 안을 깨끗이 닦은 뒤 배출하세요.'},
+  {q:['과자','과자봉지','포카칩','프링글스','새우깡','꼬깔콘','오징어땅콩','빼빼로','초코파이'],cat:'vinyl',note:'과자 봉지는 비닐류로 버려요. 내용물을 비우고 이물질이 없어야 해요.'},
+  {q:['사탕','껌','캔디','젤리','초콜릿','허쉬'],cat:'vinyl',note:'사탕·젤리·초콜릿 포장지는 비닐류로 버려요.'},
+  {q:['라면','라면봉지','신라면','짜파게티','불닭볶음면','컵라면'],cat:'vinyl',note:'라면 봉지는 비닐류예요. 컵라면 용기(스티로폼)는 플라스틱 스티로폼 수거함으로.'},
+  {q:['페트병','물병','음료수병','콜라병','사이다병','생수병','2리터','생수','투명병','pet병'],cat:'pet',note:'라벨을 완전히 제거하고 찌그러뜨려 페트병으로 배출해요. 뚜껑은 따로 플라스틱으로.'},
+  {q:['스포츠음료','이온음료','포카리','게토레이','비타500'],cat:'pet',note:'투명 페트병이에요. 라벨을 제거하고 찌그러뜨려 페트병으로 버려요.'},
+  {q:['우유팩','두유팩','주스팩','테트라팩'],cat:'paper',note:'깨끗이 씻어 말린 뒤 종이류로 배출해요. 우유팩 전용 수거함이 있으면 더 좋아요.'},
+  {q:['맥주캔','음료캔','콜라캔','에너지드링크캔','탄산음료캔','제로콜라캔'],cat:'can',note:'내용물을 비우고 찌그러뜨려 캔류로 버려요.'},
+  {q:['통조림','참치캔','꽁치캔'],cat:'can',note:'내용물을 비우고 캔류로 버려요. 뚜껑도 함께.'},
+  {q:['종이컵','일회용컵','커피컵','테이크아웃컵'],cat:'general',note:'코팅된 종이컵은 재활용이 안 돼요. 종량제 봉투(일반쓰레기)에 버려요.'},
+  {q:['요구르트','야쿠르트','액티비아'],cat:'plastic',note:'내용물을 비우고 플라스틱(PP 용기)으로 버려요.'},
+  {q:['볼펜','샤프','사인펜','형광펜','수정테이프'],cat:'general',note:'볼펜·필기구 대부분은 일반쓰레기(종량제 봉투)예요.'},
+  {q:['노트','공책','줄노트','스프링노트'],cat:'paper',note:'스프링 제거 후 종이류로 배출해요. 스프링(철)은 캔·고철류로 따로 버려요.'},
+  {q:['교과서','문제집','참고서','책'],cat:'paper',note:'종이류로 버려요. 묶어서 배출하면 편해요.'},
+  {q:['A4','A4용지','인쇄용지','복사지','종이'],cat:'paper',note:'종이류로 버려요. 젖지 않게 묶어 배출해요.'},
+  {q:['도시락','도시락통','반찬통','밀폐용기'],cat:'plastic',note:'음식물을 깨끗이 씻은 후 플라스틱으로 버려요. 오염이 심하면 일반쓰레기예요.'},
+  {q:['지우개','연필'],cat:'general',note:'일반쓰레기(종량제 봉투)에 버려요.'},
+  {q:['가위','커터칼','칼'],cat:'general',note:'날카로운 문구류는 종이에 싸서 일반쓰레기(종량제 봉투)로 버려요.'},
+  {q:['테이프','스카치테이프','마스킹테이프'],cat:'general',note:'테이프는 일반쓰레기(종량제 봉투)예요.'},
+  {q:['스티커','포스트잇'],cat:'general',note:'일반쓰레기(종량제 봉투)에 버려요.'},
+  {q:['급식트레이','스티로폼트레이','일회용접시'],cat:'plastic',note:'깨끗이 씻으면 플라스틱으로 버릴 수 있어요. 음식물이 남으면 일반쓰레기로.'},
+  {q:['나무젓가락','나무이쑤시개','나무포크'],cat:'general',note:'나무 일회용품은 일반쓰레기(종량제 봉투)예요.'},
+  {q:['빨대','플라스틱빨대'],cat:'general',note:'작은 빨대는 재활용하기 어려워 일반쓰레기(종량제 봉투)로 버려요.'},
+  {q:['케첩봉지','마요네즈봉지','소스봉지'],cat:'vinyl',note:'내용물을 깨끗이 닦은 뒤 비닐류로 버려요.'},
+  {q:['달걀껍데기','계란껍데기'],cat:'general',note:'달걀 껍데기는 음식물쓰레기가 아니에요. 일반쓰레기(종량제 봉투)로 버려요.'},
+  {q:['뼈','닭뼈','생선뼈','갈비뼈'],cat:'general',note:'딱딱한 뼈류는 음식물쓰레기가 아니에요. 일반쓰레기(종량제 봉투)로 버려요.'},
+  {q:['화장품','로션병','크림통','화장품용기'],cat:'plastic',note:'내용물을 비우고 라벨을 제거한 뒤 플라스틱으로 버려요.'},
+  {q:['샴푸통','린스통','바디워시'],cat:'plastic',note:'내용물을 완전히 비운 뒤 플라스틱으로 버려요.'},
+  {q:['마스크','일회용마스크','KF94'],cat:'general',note:'사용한 마스크는 일반쓰레기(종량제 봉투)에 버려요.'},
+  {q:['화장지','티슈','키친타월','휴지'],cat:'general',note:'사용한 화장지는 일반쓰레기(종량제 봉투)에 버려요. 재활용 안 돼요.'},
+  {q:['건전지','배터리','AA','AAA'],cat:'general',note:'건전지 전용 수거함에 버려요 (편의점·마트·주민센터). 일반쓰레기로 버리면 안 돼요.'},
+  {q:['형광등','전구','LED'],cat:'general',note:'형광등 전용 수거함에 버려요. 수은이 포함되어 별도 처리가 필요해요.'},
+  {q:['택배박스','종이박스','상자','박스'],cat:'paper',note:'테이프와 스티커를 제거하고 납작하게 접어 종이류로 배출해요.'},
+  {q:['에어캡','뽁뽁이','완충재'],cat:'vinyl',note:'에어캡(뽁뽁이)은 비닐류로 버려요. 공기를 빼서 납작하게 만들어 배출하세요.'},
+  {q:['스티로폼','발포스티렌','아이스박스'],cat:'plastic',note:'이물질이 없으면 스티로폼 전용 수거함에 버려요. 오염된 경우 일반쓰레기예요.'},
+  {q:['영수증','감열지'],cat:'general',note:'영수증은 BPA 코팅 감열지라 재활용이 안 돼요. 일반쓰레기(종량제 봉투)에 버려요.'},
+  {q:['신문','신문지','광고지','전단지'],cat:'paper',note:'종이류로 버려요. 젖거나 오염되면 일반쓰레기예요.'},
+  {q:['쇼핑백','종이쇼핑백','백화점쇼핑백'],cat:'paper',note:'손잡이(끈)를 제거하면 종이류로 버려요.'},
+  {q:['면봉','이어폰'],cat:'general',note:'일반쓰레기(종량제 봉투)에 버려요.'},
+  {q:['치약튜브','화장품튜브'],cat:'general',note:'재질이 복합재라 재활용이 어려워요. 일반쓰레기(종량제 봉투)에 버려요.'},
+  {q:['충전기','케이블','USB선','이어폰'],cat:'general',note:'소형 전자제품 전용 수거함(주민센터)에 버려요.'},
+];
+
+function getCat(id){ return CATS.find(c=>c.id===id); }
+
+function renderCats(){
+  const grid = document.getElementById('cats-grid');
+  CATS.forEach(c => {
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.setAttribute('data-id', c.id);
+    card.innerHTML = '<div class="cat-icon">'+c.icon+'</div><div class="cat-name">'+c.name+'</div><div class="cat-sub">'+c.sub+'</div>';
+    card.addEventListener('click', () => showDetail(c.id));
+    grid.appendChild(card);
+  });
+}
+
+function showDetail(id){
+  document.querySelectorAll('.cat-card').forEach(c => c.classList.toggle('active', c.dataset.id === id));
+  const cat = getCat(id);
+  const header = document.getElementById('dp-header');
+  header.style.background = cat.borderColor;
+  header.innerHTML = '<span style="font-size:26px">'+cat.icon+'</span><span class="dp-header-title">'+cat.name+'</span><button class="dp-close" id="dp-close" aria-label="닫기"><i class="ti ti-x"></i></button>';
+  document.getElementById('dp-close').addEventListener('click', closeDetail);
+  document.getElementById('dp-tip').innerHTML = '<i class="ti ti-bulb"></i><span>'+cat.tip+'</span>';
+  const grid = document.getElementById('items-grid');
+  grid.innerHTML = '';
+  cat.items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    const img = document.createElement('img');
+    img.className = 'item-img';
+    img.src = item.img;
+    img.alt = item.label;
+    img.loading = 'lazy';
+    img.onerror = function(){
+      this.style.display = 'none';
+      const ph = document.createElement('div');
+      ph.className = 'item-img-ph';
+      ph.textContent = item.emoji;
+      this.parentNode.insertBefore(ph, this);
+    };
+    const label = document.createElement('div');
+    label.className = 'item-label';
+    label.textContent = item.label;
+    card.appendChild(img);
+    card.appendChild(label);
+    grid.appendChild(card);
+  });
+  const panel = document.getElementById('detail-panel');
+  panel.style.display = 'block';
+  setTimeout(() => panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+}
+
+function closeDetail(){
+  document.getElementById('detail-panel').style.display = 'none';
+  document.querySelectorAll('.cat-card').forEach(c => c.classList.remove('active'));
+}
+
+function doSearch(val){
+  const sr = document.getElementById('search-result');
+  if(!val.trim()){ sr.style.display = 'none'; return; }
+  const lower = val.trim();
+  const match = SEARCH_DB.find(e => e.q.some(kw => kw.includes(lower) || lower.includes(kw)));
+  const header = document.getElementById('sr-header');
+  const body = document.getElementById('sr-body');
+  if(match){
+    const cat = getCat(match.cat);
+    header.innerHTML = '<div class="sr-icon-wrap" style="background:'+cat.color+';border:1px solid '+cat.borderColor+'">'+cat.icon+'</div><div><div class="sr-title">'+cat.name+'으로 버려요</div><div class="sr-sub">'+cat.sub+'</div></div>';
+    body.innerHTML = '<p>'+match.note+'</p><span class="sr-tag" style="background:'+cat.color+';color:'+cat.textColor+';border:0.5px solid '+cat.borderColor+'">'+cat.name+' 분리수거</span>';
+  } else {
+    header.innerHTML = '<div class="sr-icon-wrap" style="background:#F1EFE8;border:1px solid #B4B2A9">🤔</div><div><div class="sr-title" style="color:#444441">"'+lower+'" 검색 결과</div><div class="sr-sub">항목을 찾지 못했어요</div></div>';
+    body.innerHTML = '<p style="color:#888780">카테고리를 눌러 직접 확인하거나 다른 단어로 검색해보세요.</p>';
+  }
+  sr.style.display = 'block';
+}
+
+document.getElementById('search-input').addEventListener('input', function(){
+  document.getElementById('search-clear').style.display = this.value ? 'block' : 'none';
+  doSearch(this.value);
+});
+document.getElementById('search-clear').addEventListener('click', function(){
+  document.getElementById('search-input').value = '';
+  this.style.display = 'none';
+  document.getElementById('search-result').style.display = 'none';
+});
+
+function makeQR(){
+  const url = window.location.href.split('?')[0];
+  try {
+    new QRCode(document.getElementById('qr-wrap'), {
+      text: url, width: 120, height: 120,
+      colorDark: '#1D9E75', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  } catch(e){}
+}
+
+renderCats();
+window.addEventListener('load', makeQR);
+</script>
+</body>
+</html>
